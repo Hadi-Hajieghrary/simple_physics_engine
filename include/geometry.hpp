@@ -29,7 +29,7 @@ class LineSegment;
 class RectangularSurfacePatch;
 class Sphere;
 class RectangularCuboid;
-
+class AABB;
 
 /**
  * Get the faces of a Cuboid
@@ -90,7 +90,7 @@ const double getDistance(const Point& point, const Sphere& sphere);
 const double getDistance(const Sphere& sphere, const Point& point);
 
 /**
- * Calculate the shortest SIGNED distance from a POINT to a RECTANGULAR CUBOID
+ * \brief Calculate the shortest SIGNED distance from a POINT to a RECTANGULAR CUBOID
  * If the point is Inside the RECTANGULAR CUBOID the distance is Positive, and,
  * If the point is Outside the RECTANGULAR CUBOID the distance is Negative
  * Distance from a POINT to a RECTANGULAR CUBOID
@@ -98,14 +98,118 @@ const double getDistance(const Sphere& sphere, const Point& point);
 const double getDistance(const Point& point, const RectangularCuboid& cuboid);
 
 /**
- * Calculate the shortest SIGNED distance from a RECTANGULAR CUBOID to a POINT
+ * \brief Calculate the shortest SIGNED distance from a RECTANGULAR CUBOID to a POINT
  * If the point is Inside the RECTANGULAR CUBOID the distance is Negative, and,
  * If the point is Outside the RECTANGULAR CUBOID the distance is Positive
  * Distance from a RECTANGULAR CUBOID to a POINT
  */
 const double getDistance(const RectangularCuboid& cuboid, const Point& point);
 
+/**
+ * \brief Calculate the shortest UNSIGNED distance between two Line Segments
+ * The Line Segments can be part of Two Parallel lines, Tow Intersecting Lines, 
+ * or Two Skew Lines. In case of Intersecting or skew line, the closest points on 
+ * the line segments are the ones closest to the common prependiculat line. 
+ * In case of two parallel lines the the candidates for the closest points are 
+ * the end points of each line segments 
+ */
+const double getDistance(const LineSegment& line_segment1, const LineSegment& line_segment2);
 
+/**
+ * \brief Calculate the shortest SIGNED distance between a Line Segment and a Rectangular Surface Patch
+ * \todo Implement
+ */ 
+const double getDistance(const LineSegment& line_segment, const RectangularSurfacePatch& surface_patch);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Rectangular Surface Patch and a Line Segment
+ * \todo Implement
+ */ 
+const double getDistance( const RectangularSurfacePatch& surface_patch, const LineSegment& line_segment);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Line Segment and a Sphere
+ * If the Line Segment is completely Inside of the Sphere, then, the distance will be positive.
+ * If the Line Segment is completely Outside of the Sphere, then, the distance will Negative.
+ * If the Line Segmen Intersects the Sphere, then, the distance will be zero
+ * 
+ */ 
+const double getDistance(const LineSegment& line_segment, const Sphere& sphere);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Sphere and a Line Segment
+ * If the Line Segment is completely Inside of the Sphere, then, the distance will be Negative.
+ * If the Line Segment is completely Outside of the Sphere, then, the distance will Positive.
+ * If the Line Segmen Intersects the Sphere, then, the distance will be zero
+ * 
+ */ 
+const double getDistance(const Sphere& sphere, const LineSegment& line_segment);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Line Segment and a Rectangular Cuboid
+ * \todo Implement
+ */ 
+const double getDistance(const LineSegment& line_segment, const RectangularCuboid& cuboid);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Rectangular Cuboid and a Line Segment
+ * \todo Implement
+ */ 
+const double getDistance( const RectangularCuboid& cuboid, const LineSegment& line_segment);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between Two Rectangular Surface Patch
+ * \todo Implement
+ */ 
+const double getDistance(const RectangularSurfacePatch& surface_patch1, const RectangularSurfacePatch& surface_patch2);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Rectangular Surface Patch and a Sphere
+ * \todo Implement
+ */ 
+const double getDistance(const RectangularSurfacePatch& surface_patch, const Sphere& sphere);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Sphere and a Rectangular Surface Patch
+ * \todo Implement
+ */ 
+const double getDistance(const Sphere& sphere, const RectangularSurfacePatch& surface_patch);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Rectangular Surface Patch and a Rectangular Cuboid
+ * \todo Implement
+ */ 
+const double getDistance(const RectangularSurfacePatch& surface_patch, const RectangularCuboid& cuboid);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Rectangular Cuboid and a Rectangular Surface Patch
+ * \todo Implement
+ */ 
+const double getDistance(const RectangularCuboid& cuboid, const RectangularSurfacePatch& surface_patch);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between Two Spheres
+ * \todo Implement
+ */ 
+const double getDistance(const Sphere& sphere, const Sphere& sphere2);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Sphere and a Rectangular Cuboid
+ * \todo Implement
+ */ 
+const double getDistance(const Sphere& sphere, const RectangularCuboid& cuboid);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between a Rectangular Cuboid and a Sphere
+ * \todo Implement
+ */ 
+const double getDistance(const RectangularCuboid& cuboid, const Sphere& sphere);
+
+/**
+ * \brief Calculate the shortest SIGNED distance between Two Rectangular Cuboid
+ * \todo Implement
+ */ 
+const double getDistance(const RectangularCuboid& cuboid1, const RectangularCuboid& cuboid2);
 
 
 /**
@@ -133,7 +237,7 @@ class IntersectData{
          * Set the Minimum Distance of two shapes
          */
         IntersectData(double distance):
-        distance_{distance}, intersect_{distance<=0}
+        distance_{distance}, intersect_{distance==0}
         {
 
         }
@@ -254,6 +358,12 @@ class Shape{
          */
         virtual const IntersectData Intersect(const Shape& other) const= 0;
 
+        /**
+         * Find the Bounding Sphere
+         */
+        virtual const Sphere BoundingSphere() const = 0;
+
+
 }; //class Shape
 
 
@@ -268,10 +378,12 @@ class Point: public Shape{
         /**
          * Resize a Point - DELETED
          */
-        virtual Point& resize(const double ratio)override{
+        virtual Point& resize(const double ratio) override final{
             return *this;
+            assertm(false, "Do not use!");
         }
 
+        virtual const Sphere BoundingSphere() const override final;
 
     protected:
 
@@ -409,7 +521,8 @@ class Point: public Shape{
         }
         
         /**
-         * Find the Distance of a Point from:
+         * \brief Find the Distance of a AABB from:
+         * - AABB
          * - Point
          * - LineSegment
          * - RectangularSurfacePatch
@@ -425,7 +538,6 @@ class Point: public Shape{
 
 
 }; // class Point
-
 
 
 /**
@@ -562,7 +674,8 @@ class LineSegment: public Shape{
         }
 
         /**
-         * Find the Distance of a LineSegment from:
+         * \brief Find the Distance of a AABB from:
+         * - AABB
          * - Point
          * - LineSegment
          * - RectangularSurfacePatch
@@ -572,9 +685,14 @@ class LineSegment: public Shape{
         virtual const double getDistance(const Shape& other) const  override final;
 
         /**
-         * Find the Relative State of two Shapes
+         * \brief Find the Relative State of two Shapes
          */
         virtual const IntersectData Intersect(const Shape& other) const override final;
+
+        /**
+         * \brief Find the Bounding Sphere
+         */
+        virtual const Sphere BoundingSphere() const override final;
 
 }; //class LineSegment
 
@@ -705,9 +823,11 @@ class RectangularSurfacePatch: public Shape{
         // }
 
         /**
-         * Find the Distance of a RectangularSurfacePatch from:
+         * Find the Distance of a AABB from:
+         * - AABB
          * - Point
          * - LineSegment
+         * - RectangularSurfacePatch
          * - Sphere
          * - RectangularCuboid
          */
@@ -717,6 +837,12 @@ class RectangularSurfacePatch: public Shape{
          * Find the Relative State of two Shapes
          */
         virtual const IntersectData Intersect(const Shape& other) const override final;
+
+        /**
+         * \brief Find the Bounding Sphere
+         */
+        virtual const Sphere BoundingSphere() const override final;
+
 
 }; // class RectangularSurfacePatch
 
@@ -793,7 +919,7 @@ class Sphere: public Shape{
         /**
          * Resize the Sphere
          */
-        virtual Shape& resize(const double ratio) override final{
+        virtual Sphere& resize(const double ratio) override final{
             radius_ *= ratio;
             return *this;
         }
@@ -801,7 +927,7 @@ class Sphere: public Shape{
         /**
          * Translate the Sphere
          */
-        virtual Shape& translate(const Eigen::Vector3d& translation_vector)  override final{
+        virtual Sphere& translate(const Eigen::Vector3d& translation_vector)  override final{
             center_.translate(translation_vector);
             return *this;
         }
@@ -809,7 +935,7 @@ class Sphere: public Shape{
         /**
          * Rotate the Sphere
          */
-        virtual Shape& rotate(const Eigen::Matrix3d& rotation_matrix)  override final{
+        virtual Sphere& rotate(const Eigen::Matrix3d& rotation_matrix)  override final{
             center_.rotate(rotation_matrix);
             return *this;
         }
@@ -817,7 +943,7 @@ class Sphere: public Shape{
         /**
          * Transform a Sphere
          */
-        virtual Shape& transform(const Eigen::Matrix4d& transformation_matrix)  override final{
+        virtual Sphere& transform(const Eigen::Matrix4d& transformation_matrix)  override final{
             Eigen::Vector3d translation_vector = transformation_matrix.block<3, 1>(0, 3);
             this->translate(translation_vector);
             Eigen::Matrix3d rotation_matrix = transformation_matrix.block<3, 3>(0, 0);
@@ -840,7 +966,8 @@ class Sphere: public Shape{
         }
 
         /**
-         * Find the Distance of a Sphere from:
+         * Find the Distance of a AABB from:
+         * - AABB
          * - Point
          * - LineSegment
          * - RectangularSurfacePatch
@@ -854,6 +981,12 @@ class Sphere: public Shape{
          * Find the Relative State of two Shapes
          */
         virtual const IntersectData Intersect(const Shape& other) const override final;
+
+        /**
+         * \brief Find the Bounding Sphere
+         */
+        virtual const Sphere BoundingSphere() const override final;
+
 
 }; //class Sphere
 
@@ -945,7 +1078,7 @@ class RectangularCuboid: public Shape{
         /**
          * Translate the RectangularCuboid
          */
-        virtual Shape& translate(const Eigen::Vector3d& translation_vector)  override final{
+        virtual RectangularCuboid& translate(const Eigen::Vector3d& translation_vector)  override final{
             corner_ = corner_ + translation_vector;
             return *this;
         }
@@ -953,7 +1086,7 @@ class RectangularCuboid: public Shape{
         /**
          * Rotate the RectangularCuboid
          */
-        virtual Shape& rotate(const Eigen::Matrix3d& rotation_matrix)  override final{
+        virtual RectangularCuboid& rotate(const Eigen::Matrix3d& rotation_matrix)  override final{
             corner_.rotate(rotation_matrix);
             for(auto& edge: edges_){
                 edge = rotation_matrix * edge;
@@ -964,7 +1097,7 @@ class RectangularCuboid: public Shape{
         /**
          * Transform a RectangularCuboid
          */
-        virtual Shape& transform(const Eigen::Matrix4d& transformation_matrix)  override final{
+        virtual RectangularCuboid& transform(const Eigen::Matrix4d& transformation_matrix)  override final{
             Eigen::Vector3d translation_vector = transformation_matrix.block<3, 1>(0, 3);
             this->translate(translation_vector);
             Eigen::Matrix3d rotation_matrix = transformation_matrix.block<3, 3>(0, 0);
@@ -988,7 +1121,8 @@ class RectangularCuboid: public Shape{
 
 
         /**
-         * Find the Distance of a RectangularCuboid from:
+         * Find the Distance of a AABB from:
+         * - AABB
          * - Point
          * - LineSegment
          * - RectangularSurfacePatch
@@ -1002,6 +1136,175 @@ class RectangularCuboid: public Shape{
          * Find the Relative State of two RectangularCuboid
          */
         virtual const IntersectData Intersect(const Shape& other) const override final;
+
+
+        /**
+         * \brief Find the Bounding Sphere
+         */
+        virtual const Sphere BoundingSphere() const override final;
+
+
+}; //class RectangularCuboid
+
+
+
+/**
+ * Axis Aligned Bounding Box
+ */
+class AABB: public Shape{
+
+    private:
+
+        std::shared_ptr<RectangularCuboid> cuboid_{nullptr};
+        std::pair<Point, Point> corners_;
+
+        /**
+         * Rotate the AABB
+         */
+        virtual AABB& rotate(const Eigen::Matrix3d& rotation_matrix)  override final{
+            assertm(false, "Do not use!");
+            return *this;
+        }
+
+
+        /**
+         * Transform a AABB
+         */
+        virtual AABB& transform(const Eigen::Matrix4d& transformation_matrix)  override final{
+            assertm(false, "Do not use!");
+            return *this;
+        }
+
+    protected:
+
+
+    public:
+
+        /**
+         * Constructor
+         */
+        AABB() = delete;
+
+        /**
+         * Constructor
+         */
+        AABB(const Point& corner1, const Point& corner2)
+        {
+            assertm((corner2 - corner1)[0]<Geometry::eps, "The Diagonal of the AABB is Parallel to X axis");
+            assertm((corner2 - corner1)[1]<Geometry::eps, "The Diagonal of the AABB is Parallel to Y axis");
+            assertm((corner2 - corner1)[2]<Geometry::eps, "The Diagonal of the AABB is Parallel to Z axis");
+            
+            std::array<Eigen::Vector3d, 3> edges{Eigen::Vector3d({(corner2 - corner1)[0], 0.0, 0.0}),
+                                                    Eigen::Vector3d({0.0, (corner2 - corner1)[1], 0.0}),
+                                                    Eigen::Vector3d({0.0, 0.0, (corner2 - corner1)[2]})
+                                                 };
+            cuboid_ = std::make_shared<RectangularCuboid>(corner1, edges);
+            corners_ = std::make_pair(corner1, corner2);
+        }
+
+        /**
+         * Copy Constructor
+         */
+        AABB(const AABB& other)
+            : cuboid_{std::make_shared<RectangularCuboid>(*(other.cuboid_))}, corners_{other.corners_}
+        {}
+
+        /**
+         * Move Constructor
+         */
+        AABB(AABB&& other) noexcept
+            : cuboid_{other.cuboid_}, corners_{other.corners_} {
+                other.cuboid_ = nullptr;
+                other.corners_ = std::make_pair(Point(), Point());
+        }
+
+        /**
+         * Copy Assignment
+         */
+        AABB& operator=(const AABB& other) {
+            if (this != &other) {  // self-assignment check
+                cuboid_ = std::make_shared<RectangularCuboid>(*(other.cuboid_));
+            }
+            return *this;
+        }
+
+        /**
+         * Move Assignment
+         */
+        AABB& operator=(AABB&& other) noexcept {
+            if (this != &other) {  // self-assignment check
+                cuboid_ = other.cuboid_;
+                other.cuboid_ = nullptr; 
+                corners_ = other.corners_;
+                other.corners_ = std::make_pair(Point(), Point());
+            }
+            return *this;
+        }
+
+        /**
+         * Resize a AABB
+         */
+        virtual AABB& resize(const double ratio) override final{
+            this->cuboid_->resize(ratio);
+            double new_x = (this->corners_.second.getX() - this->corners_.first.getX()) * ratio;
+            double new_y = (this->corners_.second.getY() - this->corners_.first.getY()) * ratio;
+            double new_z = (this->corners_.second.getZ() - this->corners_.first.getZ()) * ratio;
+            this->corners_.second = Point({new_x, new_y, new_z});
+            return *this;
+        }
+
+        /**
+         * Translate the AABB
+         */
+        virtual AABB& translate(const Eigen::Vector3d& translation_vector)  override final{
+            this->cuboid_->translate(translation_vector);
+            this->corners_.first->translate(translation_vector);
+            this->corners_.second->translate(translation_vector);
+            return *this;
+        }
+
+        /**
+         * Get the Edges of the AABB
+         */
+        const std::array<Eigen::Vector3d, 3>& getEdges() const{
+            return this->cuboid_->getEdges();
+        }
+
+        /**
+         * Get the Corner of the AABB
+         */
+        const std::pair<Point, Point>& getCorner() const{
+            return this->corners_;
+        }
+
+        /**
+         * \brief Get the RectangularCuboid 
+         */
+        const RectangularCuboid& getAsCuboid() const{
+            return *(this->cuboid_);
+        }
+
+        /**
+         * Find the Distance of a AABB from:
+         * - AABB
+         * - Point
+         * - LineSegment
+         * - RectangularSurfacePatch
+         * - Sphere
+         * - RectangularCuboid
+         */
+        virtual const double getDistance(const Shape& other) const override final;
+
+        /**
+         * Find the Relative State of two RectangularCuboid
+         */
+        virtual const IntersectData Intersect(const Shape& other) const override final;
+
+        /**
+         * \brief Find the Bounding Sphere
+         */
+        virtual const Sphere BoundingSphere() const override final;
+
 
 }; //class RectangularCuboid
 
